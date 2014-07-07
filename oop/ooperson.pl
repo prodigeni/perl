@@ -2,7 +2,7 @@ package OOPerson;
 use strict;
 use warnings;
 
-use IsNumber;
+use Num;
 
 sub new {
 	my $_type = shift;
@@ -10,7 +10,10 @@ sub new {
 	my $_self = {
 		NAME => undef,
 		AGE => undef,
-		_private => 42
+		PRIVATE => sub {
+			my $s = $_[0];
+			&$s('NAME', 'david');
+		}
 	};
 	my $_closure = sub {
 		my $member = shift;
@@ -22,16 +25,10 @@ sub new {
 	return $_closure;
 }
 
-sub _me {
-	if(defined $_[0]) {
-		return $_[0];
-	}
-}
-
 sub setName {
-	my $s = _me@_;
+	my $s = $_[0];
 	my $_name = $_[1];
-	if(!IsNumber::isNumber($_name)) {
+	if(!Num::isNumber($_name)) {
 		&$s('NAME', $_name);
 	} else {
 		&$s('NAME', '');
@@ -39,14 +36,15 @@ sub setName {
 }
 
 sub getName {
-	my $s = _me@_;
+	my $s = $_[0];
+	&{&$s('PRIVATE')}(@_);
 	return &$s('NAME');
 }
 
 sub setAge {
-	my $s = _me@_;
+	my $s = $_[0];
 	my $_age = $_[1];
-	if(IsNumber::isNumber($_age)) {
+	if(Num::isNumber($_age)) {
 		&$s('AGE', $_age);
 	} else {
 		&$s('AGE', 0);
@@ -54,7 +52,7 @@ sub setAge {
 }
 
 sub getAge {
-	my $s = _me@_;
+	my $s = $_[0];
 	return &$s('AGE');
 }
 

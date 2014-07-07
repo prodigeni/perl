@@ -1,11 +1,11 @@
-package IsNumber;
+package Num;
 
 sub isInt {
-   return $_[0] =~ /^[+-]?\d+$/;
+   return defined $_[0] && $_[0] =~ /^[+-]?\d+$/;
 }
 
 sub isFloat {
-   return $_[0] =~ /^[+-]?\d+(\.\d+)?$/;
+   return defined $_[0] && $_[0] =~ /^[+-]?\d+(\.\d+)?$/;
 }
 
 sub isNumber {
