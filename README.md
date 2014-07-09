@@ -15,10 +15,9 @@ perl_workspace
 /modules -
 
     local perl modules.
-    IsNumber.pm uses regexes to test a scalar for a data type
+    Num.pm/isNumber uses regexes to test a scalar for a data type
 
 /oop -
 
     My attempts at Java level OO safety in perl
     ooperson.pl has a public closure that can access the private $_self hash reference.
-    I have no idea how to implement private subs
