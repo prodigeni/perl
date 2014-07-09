@@ -15,7 +15,7 @@ perl_workspace
 /modules -
 
     local perl modules.
-    Num.pm/isNumber uses regexes to test a scalar for a data type
+    Num::isNumber uses regexes to test a scalar for a data type
 
 /oop -
 
