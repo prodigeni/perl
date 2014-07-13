@@ -2,6 +2,7 @@ package Data;
 use strict;
 use warnings;
 use DBI;
+use This;
 
 sub new {
 	my $_type = shift;
@@ -59,15 +60,7 @@ sub new {
 	return $_public;
 }
 
-sub t {
-	my $t = shift @{$_[0]};
-	if(_is_this($t)) {
-		return $t;
-	} else {
-		_err('no init');
-	}
-}
-
+# Public query method
 sub query {
 	my $t = t(\@_);
 	my $query = shift;
@@ -76,13 +69,14 @@ sub query {
 		$t->('last_query', $t->('query'));
 		$t->('query', $query);
 		$t->_exec();
-		$t->('result_hash', $t->_build_hash());		
-		$r = $t->('result_hash');
+		$r = $t->('result_hash', $t->_build_hash());
 	}
 	
 	return $r;
 }
 
+# Build a hash reference with columns and values
+# This is what is returned to the querier
 sub _build_hash {
 	my $t = t(\@_);
 	my @r = @{$t->('result')};
@@ -142,8 +136,8 @@ sub _err {
 	die("$e");
 }
 
-sub _is_this {
-	return defined $_[0] && ref $_[0] eq __PACKAGE__;
+sub t {
+	return This::t(@_, __PACKAGE__);
 }
 
 1;
