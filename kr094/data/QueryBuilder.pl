@@ -50,8 +50,8 @@ sub select {
 				unshift($fields, $field);
 				unshift($values, $value);			
 			} else {
-				$field = undef;
-				$value = $_;
+				$field = $_;
+				$value = '';
 				unshift($fields, $field);
 				unshift($values, $value);
 			}			
@@ -95,7 +95,7 @@ sub _generate {
 }
 
 my $qb = new QueryBuilder();
-$qb->select({1 => 'one'})
+$qb->select("data")
 	->select("2 as two")
 	->select("SQLITE_VERSION() as version")
 	->get('table', 1);
