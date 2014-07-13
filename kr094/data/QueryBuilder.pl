@@ -41,15 +41,15 @@ sub select {
 		}
 	} else {
 		while(@_){
-			$_ = pop;
+			$_ = $t->trim(pop);
 			if($_ =~ /as/) {
-				my @aliases = split(/\s+as\s+/, $_, 2);
-				$field = shift @aliases;
-				$alias = shift @aliases;
+				my @split = split(/\s+as\s+/, $_, 2);
+				$field = shift @split;
+				$alias = shift @split;
 				unshift($fields, $field);
 				unshift($aliases, $alias);			
 			} else {
-				$field = $_;
+				$field = $t->trim($_);
 				$alias = '';
 				unshift($fields, $field);
 				unshift($aliases, $alias);
@@ -58,6 +58,14 @@ sub select {
 	}
 	$t->print();
 	return $t;
+}
+
+sub trim {
+	my $t = shift;
+	my $trim = shift;
+	$trim =~ s/^\s+//;
+	$trim =~ s/\s+$//;
+	return $trim;
 }
 
 sub where {
