@@ -74,7 +74,7 @@ sub query {
 	return $ret;
 }
 
-sub get_col {
+sub _get_col {
 	my $t = t(\@_);
 	my $hash = $t->('result_hash');
 	my $col = shift;

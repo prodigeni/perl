@@ -10,6 +10,7 @@ sub new {
 	my $_class = ref $_type || $_type;
 	
 	my $_self = {
+		data => undef,
 		query => '',
 		query_type => '',
 		table => '',
@@ -18,6 +19,8 @@ sub new {
 		limit => 0
 	};
 	
+	$_self->{data} = new Data();
+	
 	bless $_self, $_class;
 	
 	return $_self;
@@ -25,8 +28,7 @@ sub new {
 
 sub select {
 	my $t = shift;
-	$t->{fields} = $t->_build_hash(shift);
-	$t->print();
+	$t->_build_hash($t->{fields}, shift);
 	return $t;
 }
 
@@ -35,7 +37,7 @@ sub _build_hash {
 	# data => 'some data' OR data => 'new data'
 	# SQLITE_VERSION => 'version' OR user_name => 'billy123'
 	my $t = shift;
-	my $clause = {};
+	my $clause = shift;
 	my $field;
 	my $alias;
 	
@@ -81,9 +83,17 @@ sub get {
 	my $t = shift;
 	$t->{'table'} = shift;
 	$t->{'limit'} = shift;
-	my $db = new Data();
 	$t->_generate();
-	#$db->query($t->{'query'});
+}
+
+sub get_col {
+	my $t = shift;
+	my $col = shift;
+	my $value = '';
+	if(defined $col) {
+		$value = $t->{data}->_get_col($col);
+	}
+	return $value;
 }
 
 sub print {
@@ -114,7 +124,8 @@ sub _generate {
 }
 
 my $qb = new QueryBuilder();
-$qb->select("data")
-	->select("2 as two")
-	->select("SQLITE_VERSION() as version")
-	->get('table', 1);
+$qb->select({1 => 'one'})
+	->select("two as two");
+$qb->print();
+$qb->{data}->query("SELECT SQLITE_VERSION() as version");
+print $qb->get_col('version');
