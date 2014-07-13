@@ -82,7 +82,7 @@ sub query {
 		
 		$sth->finish();
 		$db = $t->_discon();
-		return $t->('result');
+		return $t->('result_hash');
 	}
 }
 
