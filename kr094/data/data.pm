@@ -11,6 +11,8 @@ sub new {
 		dbi => 'SQLite',
 		dbname => 'kr094.db',
 		dbh => undef,
+		error => '',
+		last_error => '',
 		query => '',
 		last_query => '',
 		result => undef,
@@ -19,17 +21,19 @@ sub new {
 		last_result => undef
 	};
 	
+	# Return a variable if the member is defined, the key exists, and it has been set
 	my $_get = sub {
 		my $_m = shift;
-		my $value = '';
+		my $_v = '';
 		if(defined $_m 
 		&& exists $_self->{$_m} 
 		&& defined $_self->{$_m}) {
-			$value = $_self->{$_m};
+			$_v = $_self->{$_m};
 		}
-		return $value;
+		return $_v;
 	};
 	
+	# Set a variable if there is a key for it
 	my $_set = sub {
 		my $_m = shift;
 		if(exists $_self->{$_m}) {
@@ -37,22 +41,22 @@ sub new {
 		}
 	};
 	
+	# Public closure with access to this scope
 	my $_public = sub {
 		my $_m = shift;
 		my $_v = '';
 		if(@_) {
-			&$_set($_m, @_);
-			$_v = &$_get($_m);
+			$_set->($_m, @_);
+			$_v = $_get->($_m);
 		}
 		else {
-			$_v = &$_get($_m);
+			$_v = $_get->($_m);
 		}
 		
 		return $_v;
 	};
 	
-	bless $_public, $_class;
-	
+	bless $_public, $_class;	
 	return $_public;
 }
 
@@ -62,33 +66,11 @@ sub query {
 	if(defined $query) {
 		$t->('last_query', $t->('query'));
 		$t->('query', $query);
+		$t->_exec();
+		$t->('result_hash', $t->build_hash());
 		
-		my $db = $t->_con();
-		my $sth = $db->prepare($t->('query'));
-		if(!$sth) {
-			err($db->errstr);
-		}
-		$sth->execute();
-		
-		my $result = $sth->fetch();
-		if(!$result) {
-			err($db->errstr);
-		}
-		
-		$t->('last_result', $t->('result'));
-		$t->('result', $result);
-		$t->('result_columns', $sth->{NAME});
-		$t->('result_hash', build_hash($t));
-		
-		$sth->finish();
-		$db = $t->_discon();
 		return $t->('result_hash');
 	}
-}
-
-sub result {	
-	my $t = t(\@_);
-	return $t->('result_hash');
 }
 
 sub build_hash {
@@ -111,12 +93,30 @@ sub t {
 			return $t;
 		}
 		else {
-			err('no package init');
+			_err('no package init');
 		}
 	}
 	else {
-		err('no init');
+		_err('no init');
 	}
+}
+
+sub _exec {
+	my $t = t(\@_);
+	my $db = $t->_con();
+	
+	my $sth = $db->prepare($t->('query'));
+	if(!$sth) {
+		$t->_err($db->errstr);
+	}
+	
+	$sth->execute();
+	$t->('last_result', $t->('result'));
+	$t->('result', $sth->fetch());
+	$t->('result_columns', $sth->{NAME});
+	
+	$sth->finish();
+	$db = $t->_discon();
 }
 
 sub _con {
@@ -132,11 +132,21 @@ sub _con {
 
 sub _discon {
 	my $t = t(\@_);
+	my $db = $t->('dbh');
+	$db->disconnect();
 	return $t->('dbh', undef);
 }
 
-sub err {
-	die("$_[0]");
+sub _err {
+	if(ref $_[0] eq __PACKAGE__)
+	{
+		my $t = t(\@_);
+		$t->('last_error', $t->('error'));
+		$t->('error', $_[1]);
+	}
+	
+	my $e = shift;
+	die("$e");
 }
 
 1;

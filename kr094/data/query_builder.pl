@@ -32,7 +32,7 @@ sub where {
 sub get {
 	my $db = new data();
 	my $r = $db->query("SELECT SQLITE_VERSION() as version, 1 as 'one', 'A' as 'letter'");
-	print $r->{'version'};
+	print $r->{'letter'};
 }
 
 get();
