@@ -5,6 +5,12 @@ perl_workspace
 
     fb.pl is a FizzBuzz one liner I found online
     fizz.pl is my improvment on the idea
+    fi.pl is another, shorter version without maps
+    
+/kr094
+    
+    Idea for an oop mvc framework in perl/sqlite3
+    Another idea for a generic object system to make things like this easier
 
 /learn -
 
