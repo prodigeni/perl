@@ -12,8 +12,9 @@ sub new {
 	my $_self = {
 		query => '',
 		query_type => '',
+		fields => [],
+		aliases => [],
 		table => '',
-		fields => {},
 		where => {},
 		limit => 0
 	};
@@ -25,44 +26,38 @@ sub new {
 
 sub select {
 	my $t = shift;
-	$t->{fields} = $t->_build_hash(shift);
-	$t->print();
-	return $t;
-}
-
-sub _build_hash {
-	# clause = map{ $field => $alias }
-	# data => 'some data' OR data => 'new data'
-	# SQLITE_VERSION => 'version' OR user_name => 'billy123'
-	my $t = shift;
-	my $clause = {};
+	$t->{'fields'} = [];
+	$t->{'aliases'} = [];
+	my $fields = \@{$t->{'fields'}};
+	my $aliases = \@{$t->{'aliases'}};
 	my $field;
 	my $alias;
-	
 	if(ref $_[0] eq "HASH") {
 		my $hash = shift;
 		for $field (keys $hash) {
 			$alias = $hash->{$field};
-			$clause->{$field} = $alias;
+			unshift($fields, $field);
+			unshift($aliases, $alias);
 		}
 	} else {
-		my $as_alias_regex = qr/\s+as\s+/;
 		while(@_){
 			$_ = $t->trim(pop);
-			if($_ =~ $as_alias_regex) {
-				my @split = split($as_alias_regex, $_, 2);
+			if($_ =~ /as/) {
+				my @split = split(/\s+as\s+/, $_, 2);
 				$field = shift @split;
 				$alias = shift @split;
+				unshift($fields, $field);
+				unshift($aliases, $alias);			
 			} else {
 				$field = $t->trim($_);
 				$alias = '';
-			}
-
-			$clause->{$field} = $alias;			
+				unshift($fields, $field);
+				unshift($aliases, $alias);
+			}			
 		}
 	}
-	
-	return $clause;
+	$t->print();
+	return $t;
 }
 
 sub trim {
@@ -88,24 +83,17 @@ sub get {
 
 sub print {
 	my $t = shift;
-	my $f = $t->{fields};
-	my $w = $t->{where};
+	my @fields = @{$t->{'fields'}};
+	my @aliases = @{$t->{'aliases'}};
+	my $index = 0;
 	my $field;
-	my $value;
-	
-	if(defined $f) {
-		for $field (keys $f) {
-			$value = $f->{$field};
-			print "$field => $value\n";
-		}
+	my $alias;
+	for $field (@fields) {
+		$alias = $aliases[$index];
+		print "$field => $alias\n";
+		$index++;
 	}
-	
-	if(defined $w) {
-		for $field (keys $w) {
-			$value = $w->{$field};
-			print "$field => $value\n";
-		}
-	}
+	return $t;
 }
 
 sub _generate {
