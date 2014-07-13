@@ -13,7 +13,7 @@ sub new {
 		query => '',
 		query_type => '',
 		fields => [],
-		values => [],
+		aliases => [],
 		table => '',
 		where => {},
 		limit => 0
@@ -27,33 +27,32 @@ sub new {
 sub select {
 	my $t = shift;
 	$t->{'fields'} = ();
-	$t->{'values'} = ();
+	$t->{'aliases'} = ();
 	my $fields = \@{$t->{'fields'}};
-	my $values = \@{$t->{'values'}};
+	my $aliases = \@{$t->{'aliases'}};
 	my $field;
-	my $value;
+	my $alias;
 	if(ref $_[0] eq "HASH") {
 		my $hash = shift;
-		my $value = '';
 		for $field (keys $hash) {
-			$value = $hash->{$field};
+			$alias = $hash->{$field};
 			unshift($fields, $field);
-			unshift($values, $value);
+			unshift($aliases, $alias);
 		}
 	} else {
 		while(@_){
 			$_ = pop;
 			if($_ =~ /as/) {
-				my @values = split(/\s+as\s+/, $_, 2);
-				$field = shift @values;
-				$value = shift @values;
+				my @aliases = split(/\s+as\s+/, $_, 2);
+				$field = shift @aliases;
+				$alias = shift @aliases;
 				unshift($fields, $field);
-				unshift($values, $value);			
+				unshift($aliases, $alias);			
 			} else {
 				$field = $_;
-				$value = '';
+				$alias = '';
 				unshift($fields, $field);
-				unshift($values, $value);
+				unshift($aliases, $alias);
 			}			
 		}
 	}
@@ -77,13 +76,13 @@ sub get {
 sub print {
 	my $t = shift;
 	my @fields = @{$t->{'fields'}};
-	my @values = @{$t->{'values'}};
+	my @aliases = @{$t->{'aliases'}};
 	my $index = 0;
 	my $field;
-	my $value;
+	my $alias;
 	for $field (@fields) {
-		$value = $values[$index];
-		print "$field => $value\n";
+		$alias = $aliases[$index];
+		print "$field => $alias\n";
 		$index++;
 	}
 	return $t;
