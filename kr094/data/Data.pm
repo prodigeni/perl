@@ -12,10 +12,9 @@ sub new {
 		dbi => 'SQLite',
 		dbname => 'kr094.db',
 		dbh => undef,
-		error => '',
-		last_error => '',
 		query => '',
 		last_query => '',
+		rows_affected => 0,
 		result => undef,
 		result_hash => undef,
 		result_columns => undef,
@@ -25,7 +24,7 @@ sub new {
 	# Return a variable if the member is defined, the key exists, and it has been set
 	my $_get = sub {
 		my $_m = shift;
-		my $_v = '';
+		my $_v = undef;
 		if(defined $_m 
 		&& exists $_self->{$_m} 
 		&& defined $_self->{$_m}) {
@@ -64,15 +63,30 @@ sub new {
 sub query {
 	my $t = t(\@_);
 	my $query = shift;
-	my $r = '';
+	my $ret = 0;
 	if(defined $query) {
 		$t->('last_query', $t->('query'));
 		$t->('query', $query);
-		$t->_exec();
-		$r = $t->('result_hash', $t->_build_hash());
+		$ret = $t->_exec();
+		$t->('rows_affected', $ret);
+		$t->('result_hash', $t->_build_hash());
 	}
-	
-	return $r;
+	return $ret;
+}
+
+sub get_col {
+	my $t = t(\@_);
+	my $hash = $t->('result_hash');
+	my $col = shift;
+	my $value = undef;
+	if(ref $hash eq "HASH"
+	&& defined $col
+	&& exists $hash->{$col}) {
+		$value = $hash->{$col};
+	} else {
+		warn 'Access of no result';
+	}
+	return $value;
 }
 
 # Build a hash reference with columns and values
@@ -95,16 +109,17 @@ sub _exec {
 	
 	my $sth = $db->prepare($t->('query'));
 	if(!$sth) {
-		$t->_err($db->errstr);
+		die("no statement");
 	}
 	
-	$sth->execute();
+	my $ret = $sth->execute();
 	$t->('last_result', $t->('result'));
 	$t->('result', $sth->fetch());
 	$t->('result_columns', $sth->{NAME});
 	
 	$sth->finish();
 	$db = $t->_discon();
+	return $ret;
 }
 
 sub _con {
@@ -123,17 +138,6 @@ sub _discon {
 	my $db = $t->('dbh');
 	$db->disconnect();
 	return $t->('dbh', undef);
-}
-
-sub _err {
-	my $e = shift;
-	if(_is_this($e)) {
-		my $t = t($e);
-		$e = shift;
-		$t->('last_error', $t->('error'));
-		$t->('error', $e);
-	}
-	die("$e");
 }
 
 sub t {
