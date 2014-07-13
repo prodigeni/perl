@@ -13,7 +13,10 @@ sub new {
 		dbh => undef,
 		query => '',
 		last_query => '',
-		result => undef
+		result => undef,
+		result_hash => undef,
+		result_columns => undef,
+		last_result => undef
 	};
 	
 	my $_get = sub {
@@ -53,6 +56,53 @@ sub new {
 	return $_public;
 }
 
+sub query {
+	my $t = t(\@_);
+	my $query = shift;
+	if(defined $query) {
+		$t->('last_query', $t->('query'));
+		$t->('query', $query);
+		
+		my $db = $t->_con();
+		my $sth = $db->prepare($t->('query'));
+		if(!$sth) {
+			err($db->errstr);
+		}
+		$sth->execute();
+		
+		my $result = $sth->fetch();
+		if(!$result) {
+			err($db->errstr);
+		}
+		
+		$t->('last_result', $t->('result'));
+		$t->('result', $result);
+		$t->('result_columns', $sth->{NAME});
+		$t->('result_hash', build_hash($t));
+		
+		$sth->finish();
+		$db = $t->_discon();
+		return $t->('result');
+	}
+}
+
+sub result {	
+	my $t = t(\@_);
+	return $t->('result_hash');
+}
+
+sub build_hash {
+	my $t = t(\@_);
+	my @r = @{$t->('result')};
+	my %hash;
+	my $index = 0;
+	for my $col (@{$t->('result_columns')}) {
+		$hash{$col} = $r[$index];
+		$index++;
+	}
+	return \%hash;
+}
+
 sub t {
 	if(defined $_[0]) {
 		my $t = shift;
@@ -85,31 +135,8 @@ sub _discon {
 	return $t->('dbh', undef);
 }
 
-sub query {
-	my $t = t(\@_);
-	my $query = shift;
-	if(defined $query) {
-		$t->('last_query', $t->('query'));
-		$t->('query', $query);
-		my $db = $t->_con();
-		my $sth = $db->prepare($t->('query'));
-		if(!$sth) {
-			err($db->errstr);
-		}
-		$sth->execute();
-		$t->('result', $sth->fetch());
-		$sth->finish();
-		$db = $t->_discon();
-		return $t->('result');
-	}
-}
-
 sub err {
 	die("$_[0]");
 }
 
-my $d = new data();
-
-my $result = $d->query('SELECT SQLITE_VERSION()');
-
-print @{$result};
+1;
