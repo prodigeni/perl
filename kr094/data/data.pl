@@ -11,21 +11,25 @@ sub new {
 		dbi => 'SQLite',
 		dbname => 'kr094.db',
 		dbh => undef,
-		query => ''
+		query => '',
+		last_query => '',
+		result => undef
 	};
 	
 	my $_get = sub {
+		my $_m = shift;
 		my $value = '';
-		if(defined $_[0] && defined $_self->{$_[0]}) {
-			$value = $_self->{$_[0]};
+		if(defined $_m 
+		&& exists $_self->{$_m} 
+		&& defined $_self->{$_m}) {
+			$value = $_self->{$_m};
 		}
 		return $value;
 	};
 	
 	my $_set = sub {
 		my $_m = shift;
-		if(defined $_self->{$_m})
-		{
+		if(exists $_self->{$_m}) {
 			$_self->{$_m} = shift;
 		}
 	};
@@ -67,23 +71,36 @@ sub t {
 
 sub _con {
 	my $t = t(\@_);
-	my $dbh = DBI->connect(
+	return $t->('dbh', DBI->connect(
 		'dbi:' .$t->('dbi')
 		.':dbname=' .$t->('dbname'),
 		'',
 		'',
 		{ RaiseError => 1}
-	);
-	$t->('dbh', $dbh);
-	return $t->('dbh');
+	));
+}
+
+sub _discon {
+	my $t = t(\@_);
+	return $t->('dbh', undef);
 }
 
 sub query {
 	my $t = t(\@_);
 	my $query = shift;
 	if(defined $query) {
+		$t->('last_query', $t->('query'));
 		$t->('query', $query);
-		my $dbh = $t->_con();
+		my $db = $t->_con();
+		my $sth = $db->prepare($t->('query'));
+		if(!$sth) {
+			err($db->errstr);
+		}
+		$sth->execute();
+		$t->('result', $sth->fetch());
+		$sth->finish();
+		$db = $t->_discon();
+		return $t->('result');
 	}
 }
 
@@ -93,5 +110,6 @@ sub err {
 
 my $d = new data();
 
-$d->query();
+my $result = $d->query('SELECT SQLITE_VERSION()');
 
+print @{$result};
