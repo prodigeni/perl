@@ -1,4 +1,4 @@
-package data;
+package Data;
 use strict;
 use warnings;
 use DBI;
@@ -48,8 +48,7 @@ sub new {
 		if(@_) {
 			$_set->($_m, @_);
 			$_v = $_get->($_m);
-		}
-		else {
+		} else {
 			$_v = $_get->($_m);
 		}
 		
@@ -60,20 +59,31 @@ sub new {
 	return $_public;
 }
 
+sub t {
+	my $t = shift @{$_[0]};
+	if(_is_this($t)) {
+		return $t;
+	} else {
+		_err('no init');
+	}
+}
+
 sub query {
 	my $t = t(\@_);
 	my $query = shift;
+	my $r = '';
 	if(defined $query) {
 		$t->('last_query', $t->('query'));
 		$t->('query', $query);
 		$t->_exec();
-		$t->('result_hash', $t->build_hash());
-		
-		return $t->('result_hash');
+		$t->('result_hash', $t->_build_hash());		
+		$r = $t->('result_hash');
 	}
+	
+	return $r;
 }
 
-sub build_hash {
+sub _build_hash {
 	my $t = t(\@_);
 	my @r = @{$t->('result')};
 	my %hash;
@@ -83,22 +93,6 @@ sub build_hash {
 		$index++;
 	}
 	return \%hash;
-}
-
-sub t {
-	if(defined $_[0]) {
-		my $t = shift;
-		$t = shift @{$t};
-		if(ref $t eq __PACKAGE__) {
-			return $t;
-		}
-		else {
-			_err('no package init');
-		}
-	}
-	else {
-		_err('no init');
-	}
 }
 
 sub _exec {
@@ -138,15 +132,18 @@ sub _discon {
 }
 
 sub _err {
-	if(ref $_[0] eq __PACKAGE__)
-	{
-		my $t = t(\@_);
-		$t->('last_error', $t->('error'));
-		$t->('error', $_[1]);
-	}
-	
 	my $e = shift;
+	if(_is_this($e)) {
+		my $t = t($e);
+		$e = shift;
+		$t->('last_error', $t->('error'));
+		$t->('error', $e);
+	}
 	die("$e");
+}
+
+sub _is_this {
+	return defined $_[0] && ref $_[0] eq __PACKAGE__;
 }
 
 1;

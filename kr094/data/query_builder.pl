@@ -3,7 +3,7 @@ use strict;
 use warnings;
 
 use lib './';
-use data;
+use Data;
 
 sub new {	
 	my $_type = shift;
@@ -30,9 +30,10 @@ sub where {
 }
 
 sub get {
-	my $db = new data();
+	# Note: data()->query() Intentionally dies for not using a class ref
+	my $db = new Data();
 	my $r = $db->query("SELECT SQLITE_VERSION() as version, 1 as 'one', 'A' as 'letter'");
-	print $r->{'letter'};
+	print $r->{'version'};
 }
 
 get();
