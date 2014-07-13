@@ -6,6 +6,7 @@ use Er;
 sub t {
 	my $t = shift;
 	my $_this = shift;
+	# Shift this from the referenced @_
 	$t = shift @{$t};
 	if(!is_this($t, $_this)) {
 		Er::r('no init');

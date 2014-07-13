@@ -42,13 +42,22 @@ sub select {
 		}
 	} else {
 		while(@_){
-			my @values = split(/as/, pop, 2);
-			$field = shift @values;
-			$value = shift @values;
-			unshift($fields, $field);
-			unshift($values, $value);
+			$_ = pop;
+			if($_ =~ /as/) {
+				my @values = split(/\s+as\s+/, $_, 2);
+				$field = shift @values;
+				$value = shift @values;
+				unshift($fields, $field);
+				unshift($values, $value);			
+			} else {
+				$field = undef;
+				$value = $_;
+				unshift($fields, $field);
+				unshift($values, $value);
+			}			
 		}
 	}
+	$t->print();
 	return $t;
 }
 
@@ -62,7 +71,7 @@ sub get {
 	$t->{'limit'} = shift;
 	my $db = new Data();
 	$t->_generate();
-	$db->query($t->{'query'});
+	#$db->query($t->{'query'});
 }
 
 sub print {
@@ -74,7 +83,7 @@ sub print {
 	my $value;
 	for $field (@fields) {
 		$value = $values[$index];
-		print "$field => $value";
+		print "$field => $value\n";
 		$index++;
 	}
 	return $t;
@@ -82,10 +91,11 @@ sub print {
 
 sub _generate {
 	my $t = shift;
-	print $t;
+	
 }
 
 my $qb = new QueryBuilder();
 $qb->select({1 => 'one'})
-	->select("1 as one")
-	->print();
+	->select("2 as two")
+	->select("SQLITE_VERSION() as version")
+	->get('table', 1);
