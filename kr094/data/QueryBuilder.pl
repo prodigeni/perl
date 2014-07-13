@@ -1,3 +1,6 @@
+# clause = map{ $field => $alias }
+# data => 'some data' OR data => 'new data'
+# SQLITE_VERSION => 'version' OR user_name => 'billy123'
 package QueryBuilder;
 use strict;
 use warnings;
@@ -14,8 +17,12 @@ sub new {
 		query => '',
 		query_type => '',
 		table => '',
-		fields => {},
-		where => {},
+		fields => [],
+		aliases => [],
+		field_hash => {},
+		where => [],
+		clauses => [],
+		where_hash => {},
 		limit => 0
 	};
 	
@@ -28,14 +35,13 @@ sub new {
 
 sub select {
 	my $t = shift;
-	$t->_build_hash($t->{fields}, shift);
+	my $clause = shift;
+	$t->_build_arrays($t->{fields}, $t->{aliases}, $clause);
+	$t->_build_hash($t->{field_hash}, $clause);
 	return $t;
 }
 
 sub _build_hash {
-	# clause = map{ $field => $alias }
-	# data => 'some data' OR data => 'new data'
-	# SQLITE_VERSION => 'version' OR user_name => 'billy123'
 	my $t = shift;
 	my $clause = shift;
 	my $field;
@@ -63,8 +69,37 @@ sub _build_hash {
 			$clause->{$field} = $alias;			
 		}
 	}
+}
+
+sub _build_arrays {
+	my $t = shift;
+	my $fields = shift;
+	my $aliases = shift;
+	my $field;
+	my $alias;
 	
-	return $clause;
+	if(ref $_[0] eq "HASH") {
+		my $hash = shift;
+		for $field (keys $hash) {
+			unshift($fields, $field);
+			unshift($aliases, $alias);
+		}
+	} else {
+		my $as_alias_regex = qr/\s+as\s+/;
+		while(@_){
+			$_ = $t->trim(pop);
+			if($_ =~ $as_alias_regex) {
+				my @split = split($as_alias_regex, $_, 2);
+				$field = shift @split;
+				$alias = shift @split;			
+			} else {
+				$field = $t->trim($_);
+				$alias = '';	
+			}	
+			unshift($fields, $field);
+			unshift($aliases, $alias);
+		}
+	}
 }
 
 sub trim {
@@ -99,20 +134,14 @@ sub get_col {
 sub print {
 	my $t = shift;
 	my $f = $t->{fields};
-	my $w = $t->{where};
+	my $a = $t->{aliases};
+	my $fh = $t->{field_hash};
 	my $field;
 	my $value;
 	
-	if(defined $f) {
-		for $field (keys $f) {
-			$value = $f->{$field};
-			print "$field => $value\n";
-		}
-	}
-	
-	if(defined $w) {
-		for $field (keys $w) {
-			$value = $w->{$field};
+	if(defined $fh) {
+		for $field (keys $fh) {
+			$value = $fh->{$field};
 			print "$field => $value\n";
 		}
 	}
