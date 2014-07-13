@@ -24,9 +24,9 @@ sub new {
 	
 	my $_set = sub {
 		my $_m = shift;
-		my $_v = &$_get($_m);
-		if($_v) {
-			$_self->{$_m} = @_[1 .. $#_];
+		if(defined $_self->{$_m})
+		{
+			$_self->{$_m} = shift;
 		}
 	};
 	
@@ -34,7 +34,8 @@ sub new {
 		my $_m = shift;
 		my $_v = '';
 		if(@_) {
-			&$_set(@_);
+			&$_set($_m, @_);
+			$_v = &$_get($_m);
 		}
 		else {
 			$_v = &$_get($_m);
@@ -64,13 +65,33 @@ sub t {
 	}
 }
 
-sub connect {
+sub _con {
 	my $t = t(\@_);
-	print $t->('not', 'sqlite');
+	my $dbh = DBI->connect(
+		'dbi:' .$t->('dbi')
+		.':dbname=' .$t->('dbname'),
+		'',
+		'',
+		{ RaiseError => 1}
+	);
+	$t->('dbh', $dbh);
+	return $t->('dbh');
+}
+
+sub query {
+	my $t = t(\@_);
+	my $query = shift;
+	if(defined $query) {
+		$t->('query', $query);
+		my $dbh = $t->_con();
+	}
 }
 
 sub err {
 	die("$_[0]");
 }
 
-new data->connect();
+my $d = new data();
+
+$d->query();
+
